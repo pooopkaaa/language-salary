@@ -9,13 +9,38 @@ def response(url, **payload):
 
 def main():
     hh_url = 'https://api.hh.ru/vacancies'
-    api_hh_response = response(hh_url, area=1)
+    programming_languages = [
+        'Python',
+        'JavaScript',
+        'Java',
+        'Ruby',
+        'PHP',
+        'C++',
+        'C#',
+        'C',
+        'Go',
+        'Objective-C',
+    ]
+
+    api_hh_response = response(
+        hh_url,
+        area=1
+    )
     hh_moscow_vacancies_all_count = api_hh_response['found']
     print(f'Количество вакансий за все время: {hh_moscow_vacancies_all_count}')
 
-    api_hh_response = response(hh_url, area=1, period=30)
-    hh_moscow_vacancies_month_count = api_hh_response['found']
-    print(f'Количество вакансий за месяц: {hh_moscow_vacancies_month_count}')
+    for programming_language in programming_languages:
+        api_hh_response = response(
+            hh_url,
+            area=1,
+            period=30,
+            text=programming_language
+        )
+        hh_moscow_vacancies_month_count = api_hh_response['found']
+        print(
+            f'Количество вакансий для языка программирования {programming_language}'
+            f'за месяц: {hh_moscow_vacancies_month_count}'
+        )
 
 
 if __name__ == '__main__':
