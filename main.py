@@ -1,4 +1,5 @@
 import requests
+from pprint import pprint
 
 
 def get_response(url, **payload):
@@ -21,8 +22,29 @@ def predict_rub_salary(vacancy):
                 return int(from_salary)*1.2
 
 
+def fetch_hh_vacancies(programming_languages):
+    url = 'https://api.hh.ru/vacancies'
+    result = {}
+    for programming_language in programming_languages[:1]:
+        response = get_response(url, area=1, period=30, text=programming_language)
+        vacancies = response['items']
+        vacancies_found = response['found']
+        vacancies_processed = [
+            predict_rub_salary(vacancy) for vacancy in vacancies
+            if predict_rub_salary(vacancy)
+        ]
+        vacancies_processed_count = len(vacancies_processed)
+        average_salary = int(sum(vacancies_processed)/vacancies_processed_count)
+
+        result[programming_language] = {
+            'vacancies_found': vacancies_found,
+            'vacancies_processed': vacancies_processed_count,
+            'average_salary': average_salary,
+        }
+    return result
+
+
 def main():
-    hh_url = 'https://api.hh.ru/vacancies'
     programming_languages = [
         'Python',
         'JavaScript',
@@ -35,29 +57,7 @@ def main():
         'Go',
         'Objective-C',
     ]
-
-    api_hh_response = get_response(
-        hh_url,
-        area=1
-    )
-    hh_moscow_vacancies_all_count = api_hh_response['found']
-    print(f'Количество вакансий за все время: {hh_moscow_vacancies_all_count}')
-
-    for programming_language in programming_languages:
-        api_hh_response = get_response(
-            hh_url,
-            area=1,
-            period=30,
-            text=programming_language
-        )
-        hh_moscow_vacancies_month_count = api_hh_response['found']
-        print(
-            f'Количество вакансий для языка программирования {programming_language} '
-            f'за месяц: {hh_moscow_vacancies_month_count}'
-        )
-        vacancies = api_hh_response['items']
-        for vacancy in vacancies:
-            print(predict_rub_salary(vacancy))
+    pprint(fetch_hh_vacancies(programming_languages))
 
 
 if __name__ == '__main__':
