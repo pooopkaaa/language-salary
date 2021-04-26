@@ -1,7 +1,7 @@
 import requests
 
 
-def response(url, **payload):
+def get_response(url, **payload):
     response = requests.get(url, params=payload)
     response.raise_for_status()
     return response.json()
@@ -22,7 +22,7 @@ def main():
         'Objective-C',
     ]
 
-    api_hh_response = response(
+    api_hh_response = get_response(
         hh_url,
         area=1
     )
@@ -30,7 +30,7 @@ def main():
     print(f'Количество вакансий за все время: {hh_moscow_vacancies_all_count}')
 
     for programming_language in programming_languages:
-        api_hh_response = response(
+        api_hh_response = get_response(
             hh_url,
             area=1,
             period=30,
@@ -41,6 +41,10 @@ def main():
             f'Количество вакансий для языка программирования {programming_language}'
             f'за месяц: {hh_moscow_vacancies_month_count}'
         )
+        vacancies = api_hh_response['items']
+        for vacancy in vacancies:
+            print(vacancy['salary'])
+
 
 
 if __name__ == '__main__':
