@@ -7,6 +7,20 @@ def get_response(url, **payload):
     return response.json()
 
 
+def predict_rub_salary(vacancy):
+    raw_salary = vacancy['salary']
+    if raw_salary:
+        if raw_salary.get('currency') == 'RUR':
+            from_salary = raw_salary.get('from')
+            to_salary = raw_salary.get('to')
+            if from_salary and to_salary:
+                return (int(to_salary) + int(from_salary))//2
+            elif from_salary is None:
+                return int(to_salary)*0.8
+            elif to_salary is None:
+                return int(from_salary)*1.2
+
+
 def main():
     hh_url = 'https://api.hh.ru/vacancies'
     programming_languages = [
@@ -38,13 +52,12 @@ def main():
         )
         hh_moscow_vacancies_month_count = api_hh_response['found']
         print(
-            f'Количество вакансий для языка программирования {programming_language}'
+            f'Количество вакансий для языка программирования {programming_language} '
             f'за месяц: {hh_moscow_vacancies_month_count}'
         )
         vacancies = api_hh_response['items']
         for vacancy in vacancies:
-            print(vacancy['salary'])
-
+            print(predict_rub_salary(vacancy))
 
 
 if __name__ == '__main__':
