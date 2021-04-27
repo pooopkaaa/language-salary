@@ -1,8 +1,9 @@
 import requests
 from pprint import pprint
+from itertools import count
 
 
-def get_response(url, **payload):
+def get_response(url, payload):
     response = requests.get(url, params=payload)
     response.raise_for_status()
     return response.json()
@@ -22,15 +23,25 @@ def predict_rub_salary(vacancy):
                 return int(from_salary)*1.2
 
 
+def fetch_vacancies_for_programming_language(url, pages, payload):
+    for page in range(pages):
+        response = get_response(url, payload)
+        yield from response['items']
+
+
 def fetch_hh_vacancies(programming_languages):
     url = 'https://api.hh.ru/vacancies'
     result = {}
-    for programming_language in programming_languages[:1]:
-        response = get_response(url, area=1, period=30, text=programming_language)
-        vacancies = response['items']
+    payload = {'area': 1, 'period': 30, 'per_page': 100}
+
+    for programming_language in programming_languages:
+        payload['text'] = programming_language
+        response = get_response(url, payload)
         vacancies_found = response['found']
+        vacancies_pages = response['pages']
         vacancies_processed = [
-            predict_rub_salary(vacancy) for vacancy in vacancies
+            predict_rub_salary(vacancy)
+            for vacancy in fetch_vacancies_for_programming_language(url, vacancies_pages, payload)
             if predict_rub_salary(vacancy)
         ]
         vacancies_processed_count = len(vacancies_processed)
