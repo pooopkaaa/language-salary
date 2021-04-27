@@ -3,8 +3,8 @@ from pprint import pprint
 from itertools import count
 
 
-def get_response(url, payload):
-    response = requests.get(url, params=payload)
+def get_response(url, payload=None, header=None):
+    response = requests.get(url, headers=header, params=payload)
     response.raise_for_status()
     return response.json()
 
@@ -55,6 +55,22 @@ def fetch_hh_vacancies(programming_languages):
     return result
 
 
+def fetch_superjob_vacancies(programming_languages):
+    secret_key = 'v3.r.134199680.69d2207fa683ebb1ca84016dacc5e518baea99a0.515c5e943980a1855a590cd4a7023dd82e290d8a'
+    access_id = '1665'
+    url = 'https://api.superjob.ru/2.0/vacancies/'
+    header = {
+        'X-Api-App-Id': 'v3.r.134199680.69d2207fa683ebb1ca84016dacc5e518baea99a0.515c5e943980a1855a590cd4a7023dd82e290d8a',
+    }
+    payload = {
+        'town': 4,
+        'keyword': 'Программист'
+    }
+    response = get_response(url, header=header, payload=payload)
+    for vacancy in response['objects']:
+        print(vacancy['profession'], vacancy['town']['title'])
+
+
 def main():
     programming_languages = [
         'Python',
@@ -68,7 +84,8 @@ def main():
         'Go',
         'Objective-C',
     ]
-    pprint(fetch_hh_vacancies(programming_languages))
+    # pprint(fetch_hh_vacancies(programming_languages))
+    fetch_superjob_vacancies(programming_languages)
 
 
 if __name__ == '__main__':
