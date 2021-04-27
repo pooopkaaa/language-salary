@@ -9,27 +9,34 @@ def get_response(url, payload=None, header=None):
     return response.json()
 
 
-def predict_rub_salary(vacancy):
+def predict_salary(salary_from, salary_to):
+    if salary_from and salary_to:
+        return (salary_to + salary_from)//2
+    elif salary_from:
+        return salary_from*1.2
+    elif salary_to:
+        return salary_to*0.8
+
+
+def predict_rub_salary_hh(vacancy):
     raw_salary = vacancy['salary']
     if raw_salary:
         if raw_salary.get('currency') == 'RUR':
-            from_salary = raw_salary.get('from')
-            to_salary = raw_salary.get('to')
-            if from_salary and to_salary:
-                return (int(to_salary) + int(from_salary))//2
-            elif from_salary is None:
-                return int(to_salary)*0.8
-            elif to_salary is None:
-                return int(from_salary)*1.2
+            return predict_salary(raw_salary.get('from'), raw_salary.get('to'))
 
 
-def fetch_vacancies_for_programming_language(url, pages, payload):
+def predict_rub_salary_sj(vacancy):
+    if vacancy['currency'] == 'rub':
+        return predict_salary(vacancy['payment_from'], vacancy['payment_to'])
+    
+
+def generator_vacancies_for_programming_language(url, pages, payload):
     for page in range(pages):
         response = get_response(url, payload)
         yield from response['items']
 
 
-def fetch_hh_vacancies(programming_languages):
+def fetch_vacancies_hh(programming_languages):
     url = 'https://api.hh.ru/vacancies'
     result = {}
     payload = {'area': 1, 'period': 30, 'per_page': 100}
@@ -40,9 +47,9 @@ def fetch_hh_vacancies(programming_languages):
         vacancies_found = response['found']
         vacancies_pages = response['pages']
         vacancies_processed = [
-            predict_rub_salary(vacancy)
-            for vacancy in fetch_vacancies_for_programming_language(url, vacancies_pages, payload)
-            if predict_rub_salary(vacancy)
+            predict_rub_salary_hh(vacancy)
+            for vacancy in generator_vacancies_for_programming_language(url, vacancies_pages, payload)
+            if predict_rub_salary_hh(vacancy)
         ]
         vacancies_processed_count = len(vacancies_processed)
         average_salary = int(sum(vacancies_processed)/vacancies_processed_count)
@@ -55,20 +62,21 @@ def fetch_hh_vacancies(programming_languages):
     return result
 
 
-def fetch_superjob_vacancies(programming_languages):
-    secret_key = 'v3.r.134199680.69d2207fa683ebb1ca84016dacc5e518baea99a0.515c5e943980a1855a590cd4a7023dd82e290d8a'
-    access_id = '1665'
+def fetch_vacancies_sj(programming_languages):
+    result = {}
     url = 'https://api.superjob.ru/2.0/vacancies/'
     header = {
         'X-Api-App-Id': 'v3.r.134199680.69d2207fa683ebb1ca84016dacc5e518baea99a0.515c5e943980a1855a590cd4a7023dd82e290d8a',
     }
-    payload = {
-        'town': 4,
-        'keyword': 'Программист'
-    }
-    response = get_response(url, header=header, payload=payload)
-    for vacancy in response['objects']:
-        print(vacancy['profession'], vacancy['town']['title'])
+    payload = {'town': 4, 'period': 0, 'count':100, 'page':1}
+    for programming_language in programming_languages[:1]:
+        payload['keyword'] = programming_language
+        response = get_response(url, header=header, payload=payload)
+        pprint(response)
+        vacancies_found = response['total']
+
+        for vacancy in response['objects']:
+            print(vacancy['profession'], vacancy['town']['title'], predict_rub_salary_sj(vacancy), vacancy['currency'], vacancy['payment_from'], vacancy['payment_to'])
 
 
 def main():
@@ -84,8 +92,8 @@ def main():
         'Go',
         'Objective-C',
     ]
-    # pprint(fetch_hh_vacancies(programming_languages))
-    fetch_superjob_vacancies(programming_languages)
+    # pprint(fetch_vacancies_hh(programming_languages))
+    fetch_vacancies_sj(programming_languages)
 
 
 if __name__ == '__main__':
