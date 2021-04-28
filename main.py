@@ -1,7 +1,14 @@
+import os
 import requests
 from pprint import pprint
 from itertools import count
 import argparse
+from dotenv import load_dotenv
+from terminaltables import AsciiTable
+
+
+load_dotenv() 
+API_SUPERJOB_SECRETKEY = os.environ.get('API_SUPERJOB_SECRETKEY')
 
 
 def get_command_line_args():
@@ -27,11 +34,16 @@ def get_command_line_args():
 
 
 def get_town_ids(town):
-    sj_town_id = get_response(f'https://api.superjob.ru/2.0/towns/?keyword={town}')[0]['id']
-    
-    hh_region_ids = get_response('https://api.hh.ru/areas/113')['areas']
-    hh_town_ids = [town['areas'] for town in hh_region_ids]
-    print(hh_town_ids)
+    sj_url = 'https://api.superjob.ru/2.0/towns'
+    sj_payload = {'keyword': town}
+    sj_town_id = get_response(sj_url, payload=sj_payload)['objects'][0]['id']
+
+    hh_url = 'https://api.hh.ru/suggests/area_leaves'
+    hh_payload = {'text': town}
+    hh_town_id = get_response(hh_url, payload=hh_payload)['items'][0]['id']
+
+    return sj_town_id, hh_town_id
+
 
 def get_response(url, payload=None, header=None):
     response = requests.get(url, headers=header, params=payload)
@@ -66,10 +78,19 @@ def generator_vacancies_for_hh(url, pages, payload):
         yield from response['items']
 
 
-def fetch_vacancies_hh(programming_languages):
-    url = 'https://api.hh.ru/vacancies'
+def generator_vacancies_for_sj(url, header, payload):
+    for page in count():
+        payload['page'] = page
+        response = get_response(url, header=header, payload=payload)
+        yield from response['objects']
+        if not response['more']:
+            break
+
+
+def fetch_statistics_hh(programming_languages, town_id, period):
     result = {}
-    payload = {'area': 1, 'period': 30, 'per_page': 100}
+    url = 'https://api.hh.ru/vacancies'
+    payload = {'area': town_id, 'period': period, 'per_page': 100}
 
     for programming_language in programming_languages:
         payload['text'] = programming_language
@@ -78,7 +99,7 @@ def fetch_vacancies_hh(programming_languages):
         vacancies_pages = response['pages']
         vacancies_processed = [
             predict_rub_salary_hh(vacancy)
-            for vacancy in generator_vacancies_for_programming_language(
+            for vacancy in generator_vacancies_for_hh(
                 url,
                 vacancies_pages,
                 payload
@@ -96,23 +117,12 @@ def fetch_vacancies_hh(programming_languages):
     return result
 
 
-def generator_vacancies_for_sj(url, header, payload):
-    for page in count():
-        payload['page'] = page
-        response = get_response(url, header=header, payload=payload)
-        yield from response['objects']
-        if not response['more']:
-            break
-
-
-def fetch_statistics_sj(programming_languages, town, period):
+def fetch_statistics_sj(programming_languages, town_id, period):
     result = {}
     url = 'https://api.superjob.ru/2.0/vacancies/'
-    header = {
-        'X-Api-App-Id': 'v3.r.134199680.69d2207fa683ebb1ca84016dacc5e518baea99a0.515c5e943980a1855a590cd4a7023dd82e290d8a',
-    }
-    town_id = get_town_id(town)
+    header = {'X-Api-App-Id': API_SUPERJOB_SECRETKEY}
     payload = {'town': town_id, 'period': period, 'count': 100}
+    
     for programming_language in programming_languages:
         payload['keyword'] = programming_language
         response = get_response(url, header=header, payload=payload)
@@ -146,7 +156,6 @@ def get_terminal_table(statistics, title):
     table.insert(0, table_first_line)
     table_instance = AsciiTable(table, title)
     print(table_instance.table)
-    print()
 
 
 def main():
@@ -168,13 +177,13 @@ def main():
     period = command_line_args.period
     sj_town_id, hh_town_id = get_town_ids(town)
 
-    # sj_statistics = fetch_statistics_sj(programming_languages, sj_town_id, period)
-    # sj_title = 'SuperJob {town}'
-    # get_terminal_table(sj_statistics, sj_title)
+    sj_statistics = fetch_statistics_sj(programming_languages, sj_town_id, period)
+    sj_title = f'SuperJob {town}'
+    get_terminal_table(sj_statistics, sj_title)
 
-    # hh_statistics = fetch_statistics_hh(programming_languages)
-    # hh_title = 'SuperJob {town}'
-    # get_terminal_table(hh_statistics, hh_title)
+    hh_statistics = fetch_statistics_hh(programming_languages, hh_town_id, period)
+    hh_title = f'HeadHunter {town}'
+    get_terminal_table(hh_statistics, hh_title)
 
 
 if __name__ == '__main__':
