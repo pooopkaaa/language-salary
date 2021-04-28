@@ -30,7 +30,7 @@ def predict_rub_salary_sj(vacancy):
         return predict_salary(vacancy['payment_from'], vacancy['payment_to'])
     
 
-def generator_vacancies_for_programming_language(url, pages, payload):
+def generator_vacancies_for_hh(url, pages, payload):
     for page in range(pages):
         response = get_response(url, payload)
         yield from response['items']
@@ -62,21 +62,39 @@ def fetch_vacancies_hh(programming_languages):
     return result
 
 
+def generator_vacancies_for_sj(url, header, payload):
+    for page in count():
+        payload['page'] = page
+        response = get_response(url, header=header, payload=payload)
+        yield from response['objects']
+        if not response['more']:
+            break
+
+
 def fetch_vacancies_sj(programming_languages):
     result = {}
     url = 'https://api.superjob.ru/2.0/vacancies/'
     header = {
         'X-Api-App-Id': 'v3.r.134199680.69d2207fa683ebb1ca84016dacc5e518baea99a0.515c5e943980a1855a590cd4a7023dd82e290d8a',
     }
-    payload = {'town': 4, 'period': 0, 'count':100, 'page':1}
+    payload = {'town': 4, 'period': 0, 'count':50}
     for programming_language in programming_languages[:1]:
         payload['keyword'] = programming_language
         response = get_response(url, header=header, payload=payload)
-        pprint(response)
         vacancies_found = response['total']
-
-        for vacancy in response['objects']:
-            print(vacancy['profession'], vacancy['town']['title'], predict_rub_salary_sj(vacancy), vacancy['currency'], vacancy['payment_from'], vacancy['payment_to'])
+        vacancies_processed = [
+            predict_rub_salary_sj(vacancy)
+            for vacancy in generator_vacancies_for_sj(url, header, payload)
+            if predict_rub_salary_sj(vacancy)
+        ]
+        vacancies_processed_count = len(vacancies_processed)
+        average_salary = int(sum(vacancies_processed)//vacancies_processed_count)
+        result[programming_language] = {
+            'vacancies_found': vacancies_found,
+            'vacancies_processed': vacancies_processed_count,
+            'average_salary': average_salary,
+        }
+    return result
 
 
 def main():
@@ -93,7 +111,7 @@ def main():
         'Objective-C',
     ]
     # pprint(fetch_vacancies_hh(programming_languages))
-    fetch_vacancies_sj(programming_languages)
+    pprint(fetch_vacancies_sj(programming_languages))
 
 
 if __name__ == '__main__':
