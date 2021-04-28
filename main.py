@@ -1,7 +1,37 @@
 import requests
 from pprint import pprint
 from itertools import count
+import argparse
 
+
+def get_command_line_args():
+    parser = argparse.ArgumentParser(
+        description='Скрипт для поиска размера зарплаты\
+        среди популярных языков программирования'
+    )
+    parser.add_argument(
+        '-t',
+        '--town',
+        default='Москва',
+        type=str,
+        help='Укажите город для поиска вакансий'
+    )
+    parser.add_argument(
+        '-p',
+        '--period',
+        default=30,
+        type=int,
+        help='Укажите за какой промежуток дней предоставить статистику'
+    )
+    return parser.parse_args()
+
+
+def get_town_ids(town):
+    sj_town_id = get_response(f'https://api.superjob.ru/2.0/towns/?keyword={town}')[0]['id']
+    
+    hh_region_ids = get_response('https://api.hh.ru/areas/113')['areas']
+    hh_town_ids = [town['areas'] for town in hh_region_ids]
+    print(hh_town_ids)
 
 def get_response(url, payload=None, header=None):
     response = requests.get(url, headers=header, params=payload)
@@ -75,14 +105,15 @@ def generator_vacancies_for_sj(url, header, payload):
             break
 
 
-def fetch_vacancies_sj(programming_languages):
+def fetch_statistics_sj(programming_languages, town, period):
     result = {}
     url = 'https://api.superjob.ru/2.0/vacancies/'
     header = {
         'X-Api-App-Id': 'v3.r.134199680.69d2207fa683ebb1ca84016dacc5e518baea99a0.515c5e943980a1855a590cd4a7023dd82e290d8a',
     }
-    payload = {'town': 4, 'period': 0, 'count': 50}
-    for programming_language in programming_languages[:1]:
+    town_id = get_town_id(town)
+    payload = {'town': town_id, 'period': period, 'count': 100}
+    for programming_language in programming_languages:
         payload['keyword'] = programming_language
         response = get_response(url, header=header, payload=payload)
         vacancies_found = response['total']
@@ -101,6 +132,23 @@ def fetch_vacancies_sj(programming_languages):
     return result
 
 
+def get_terminal_table(statistics, title):
+    table_first_line = ['Язык программирования', 'Вакансий найдено', 'Вакансий обработано', 'Средняя зарплата']
+    table = [
+        [
+            language_static,
+            statistics[language_static]['vacancies_found'],
+            statistics[language_static]['vacancies_processed'],
+            statistics[language_static]['average_salary']
+        ]
+        for language_static in statistics
+    ]
+    table.insert(0, table_first_line)
+    table_instance = AsciiTable(table, title)
+    print(table_instance.table)
+    print()
+
+
 def main():
     programming_languages = [
         'Python',
@@ -110,12 +158,23 @@ def main():
         'PHP',
         'C++',
         'C#',
-        'C',
+        'Swift',
         'Go',
         'Objective-C',
     ]
-    # pprint(fetch_vacancies_hh(programming_languages))
-    pprint(fetch_vacancies_sj(programming_languages))
+
+    command_line_args = get_command_line_args()
+    town = command_line_args.town
+    period = command_line_args.period
+    sj_town_id, hh_town_id = get_town_ids(town)
+
+    # sj_statistics = fetch_statistics_sj(programming_languages, sj_town_id, period)
+    # sj_title = 'SuperJob {town}'
+    # get_terminal_table(sj_statistics, sj_title)
+
+    # hh_statistics = fetch_statistics_hh(programming_languages)
+    # hh_title = 'SuperJob {town}'
+    # get_terminal_table(hh_statistics, hh_title)
 
 
 if __name__ == '__main__':
