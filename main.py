@@ -28,7 +28,7 @@ def predict_rub_salary_hh(vacancy):
 def predict_rub_salary_sj(vacancy):
     if vacancy['currency'] == 'rub':
         return predict_salary(vacancy['payment_from'], vacancy['payment_to'])
-    
+
 
 def generator_vacancies_for_hh(url, pages, payload):
     for page in range(pages):
@@ -48,7 +48,11 @@ def fetch_vacancies_hh(programming_languages):
         vacancies_pages = response['pages']
         vacancies_processed = [
             predict_rub_salary_hh(vacancy)
-            for vacancy in generator_vacancies_for_programming_language(url, vacancies_pages, payload)
+            for vacancy in generator_vacancies_for_programming_language(
+                url,
+                vacancies_pages,
+                payload
+            )
             if predict_rub_salary_hh(vacancy)
         ]
         vacancies_processed_count = len(vacancies_processed)
@@ -77,7 +81,7 @@ def fetch_vacancies_sj(programming_languages):
     header = {
         'X-Api-App-Id': 'v3.r.134199680.69d2207fa683ebb1ca84016dacc5e518baea99a0.515c5e943980a1855a590cd4a7023dd82e290d8a',
     }
-    payload = {'town': 4, 'period': 0, 'count':50}
+    payload = {'town': 4, 'period': 0, 'count': 50}
     for programming_language in programming_languages[:1]:
         payload['keyword'] = programming_language
         response = get_response(url, header=header, payload=payload)
