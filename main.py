@@ -33,16 +33,16 @@ def get_command_line_args():
     return parser.parse_args()
 
 
-def get_town_ids(town):
+def get_town_id_sj(town):
     sj_url = 'https://api.superjob.ru/2.0/towns'
     sj_payload = {'keyword': town}
-    sj_town_id = get_response(sj_url, payload=sj_payload)['objects'][0]['id']
+    return get_response(sj_url, payload=sj_payload)['objects'][0]['id']
 
+
+def get_town_id_hh(town):
     hh_url = 'https://api.hh.ru/suggests/area_leaves'
     hh_payload = {'text': town}
-    hh_town_id = get_response(hh_url, payload=hh_payload)['items'][0]['id']
-
-    return sj_town_id, hh_town_id
+    return get_response(hh_url, payload=hh_payload)['items'][0]['id']
 
 
 def get_response(url, payload=None, header=None):
@@ -92,7 +92,7 @@ def fetch_statistics_hh(programming_languages, town_id, period):
     url = 'https://api.hh.ru/vacancies'
     payload = {'area': town_id, 'period': period, 'per_page': 100}
 
-    for programming_language in programming_languages:
+    for programming_language in programming_languages[:2]:
         payload['text'] = programming_language
         response = get_response(url, payload)
         vacancies_found = response['found']
@@ -123,7 +123,7 @@ def fetch_statistics_sj(programming_languages, town_id, period):
     header = {'X-Api-App-Id': API_SUPERJOB_SECRETKEY}
     payload = {'town': town_id, 'period': period, 'count': 100}
     
-    for programming_language in programming_languages:
+    for programming_language in programming_languages[:2]:
         payload['keyword'] = programming_language
         response = get_response(url, header=header, payload=payload)
         vacancies_found = response['total']
@@ -175,15 +175,18 @@ def main():
     command_line_args = get_command_line_args()
     town = command_line_args.town
     period = command_line_args.period
-    sj_town_id, hh_town_id = get_town_ids(town)
+    try:
+        sj_town_id, hh_town_id = get_town_id_sj(town), get_town_id_hh(town)
 
-    sj_statistics = fetch_statistics_sj(programming_languages, sj_town_id, period)
-    sj_title = f'SuperJob {town}'
-    get_terminal_table(sj_statistics, sj_title)
+        sj_statistics = fetch_statistics_sj(programming_languages, sj_town_id, period)
+        sj_title = f'SuperJob {town}'
+        get_terminal_table(sj_statistics, sj_title)
 
-    hh_statistics = fetch_statistics_hh(programming_languages, hh_town_id, period)
-    hh_title = f'HeadHunter {town}'
-    get_terminal_table(hh_statistics, hh_title)
+        hh_statistics = fetch_statistics_hh(programming_languages, hh_town_id, period)
+        hh_title = f'HeadHunter {town}'
+        get_terminal_table(hh_statistics, hh_title)
+    except requests.exceptions.HTTPError:
+        print('Error')
 
 
 if __name__ == '__main__':
