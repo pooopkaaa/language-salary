@@ -1,7 +1,6 @@
 import os
 import argparse
 from itertools import count
-from pprint import pprint
 
 from dotenv import load_dotenv
 import requests
@@ -70,7 +69,7 @@ def predict_rub_salary_hh(vacancy):
     raw_salary = vacancy['salary']
     if raw_salary:
         if raw_salary.get('currency') == 'RUR':
-            return predict_salary(raw_salary.get('from'), raw_salary.get('to'))
+            return predict_salary(raw_salary['from'], raw_salary['to'])
 
 
 def predict_rub_salary_sj(vacancy):
