@@ -77,15 +77,15 @@ def predict_rub_salary_sj(vacancy):
         return predict_salary(vacancy['payment_from'], vacancy['payment_to'])
 
 
-def generator_vacancies_for_hh(url, pages, payload):
-    for page in range(pages):
+def generator_vacancies_for_hh(url, pages_amount, payload):
+    for page_number in range(pages_amount):
         response = get_response(url, payload)
         yield from response['items']
 
 
 def generator_vacancies_for_sj(url, header, payload):
-    for page in count():
-        payload['page'] = page
+    for page_number in count():
+        payload['page'] = page_number
         response = get_response(url, payload, header)
         yield from response['objects']
         if not response['more']:
@@ -93,7 +93,7 @@ def generator_vacancies_for_sj(url, header, payload):
 
 
 def fetch_statistics_hh(town_id, period):
-    result = {}
+    statistics = {}
     url = 'https://api.hh.ru/vacancies'
     payload = {'area': town_id, 'period': period, 'per_page': 100}
 
@@ -101,25 +101,25 @@ def fetch_statistics_hh(town_id, period):
         payload['text'] = programming_language
         response = get_response(url, payload)
         vacancies_found = response['found']
-        vacancies_pages = response['pages']
+        vacancies_pages_amount = response['pages']
         processed_salaries = []
-        for vacancy in generator_vacancies_for_hh(url, vacancies_pages, payload):
+        for vacancy in generator_vacancies_for_hh(url, vacancies_pages_amount, payload):
             predicted_rub_salary = predict_rub_salary_hh(vacancy)
             if predicted_rub_salary:
                 processed_salaries.append(predicted_rub_salary)
         processed_vacancies_count = len(processed_salaries)
         if processed_vacancies_count:
             average_salary = int(sum(processed_salaries)/processed_vacancies_count)
-            result[programming_language] = {
+            statistics[programming_language] = {
                 'vacancies_found': vacancies_found,
                 'vacancies_processed': processed_vacancies_count,
                 'average_salary': average_salary,
             }
-    return result
+    return statistics
 
 
 def fetch_statistics_sj(town_id, period):
-    result = {}
+    statistics = {}
     url = 'https://api.superjob.ru/2.0/vacancies/'
     header = {'X-Api-App-Id': API_SUPERJOB_SECRETKEY}
     payload = {'town': town_id, 'period': period, 'count': 100}
@@ -136,12 +136,12 @@ def fetch_statistics_sj(town_id, period):
         processed_vacancies_count = len(processed_salaries)
         if processed_vacancies_count:
             average_salary = int(sum(processed_salaries)//processed_vacancies_count)
-            result[programming_language] = {
+            statistics[programming_language] = {
                 'vacancies_found': vacancies_found,
                 'vacancies_processed': processed_vacancies_count,
                 'average_salary': average_salary,
             }
-    return result
+    return statistics
 
 
 def get_terminal_table(statistics, title):
@@ -182,8 +182,8 @@ def main():
         if hh_statistics:
             hh_title = f'HeadHunter {town}'
             get_terminal_table(hh_statistics, hh_title)
-    except requests.exceptions.HTTPError as connection_error:
-        print(connection_error)
+    except requests.exceptions.HTTPError as http_error:
+        print(http_error)
 
 
 if __name__ == '__main__':
