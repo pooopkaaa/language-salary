@@ -97,20 +97,16 @@ def fetch_statistics_hh(town_id, period):
     url = 'https://api.hh.ru/vacancies'
     payload = {'area': town_id, 'period': period, 'per_page': 100}
 
-    for programming_language in PROGRAMMING_LANGUAGES:
+    for programming_language in PROGRAMMING_LANGUAGES[:1]:
         payload['text'] = programming_language
         response = get_response(url, payload)
         vacancies_found = response['found']
         vacancies_pages = response['pages']
-        processed_salaries = [
-            predict_rub_salary_hh(vacancy)
-            for vacancy in generator_vacancies_for_hh(
-                url,
-                vacancies_pages,
-                payload
-            )
-            if predict_rub_salary_hh(vacancy)
-        ]
+        processed_salaries = []
+        for vacancy in generator_vacancies_for_hh(url, vacancies_pages, payload):
+            predicted_rub_salary = predict_rub_salary_hh(vacancy)
+            if predicted_rub_salary:
+                processed_salaries.append(predicted_rub_salary)
         processed_vacancies_count = len(processed_salaries)
         if processed_vacancies_count:
             average_salary = int(sum(processed_salaries)/processed_vacancies_count)
@@ -128,15 +124,15 @@ def fetch_statistics_sj(town_id, period):
     header = {'X-Api-App-Id': API_SUPERJOB_SECRETKEY}
     payload = {'town': town_id, 'period': period, 'count': 100}
 
-    for programming_language in PROGRAMMING_LANGUAGES:
+    for programming_language in PROGRAMMING_LANGUAGES[:1]:
         payload['keyword'] = programming_language
         response = get_response(url, payload, header)
         vacancies_found = response['total']
-        processed_salaries = [
-            predict_rub_salary_sj(vacancy)
-            for vacancy in generator_vacancies_for_sj(url, header, payload)
-            if predict_rub_salary_sj(vacancy)
-        ]
+        processed_salaries = []
+        for vacancy in generator_vacancies_for_sj(url, header, payload):
+            predicted_rub_salary = predict_rub_salary_sj(vacancy)
+            if predicted_rub_salary:
+                processed_salaries.append(predicted_rub_salary)
         processed_vacancies_count = len(processed_salaries)
         if processed_vacancies_count:
             average_salary = int(sum(processed_salaries)//processed_vacancies_count)
