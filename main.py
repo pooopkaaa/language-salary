@@ -162,7 +162,7 @@ def get_terminal_table(statistics, title):
     ]
     table.insert(0, table_first_line)
     table_instance = AsciiTable(table, title)
-    print(table_instance.table)
+    return table_instance.table
 
 
 def main():
@@ -176,12 +176,12 @@ def main():
         sj_statistics = fetch_statistics_sj(sj_town_id, period)
         if sj_statistics:
             sj_title = f'SuperJob {town}'
-            get_terminal_table(sj_statistics, sj_title)
+            print(get_terminal_table(sj_statistics, sj_title))
 
         hh_statistics = fetch_statistics_hh(hh_town_id, period)
         if hh_statistics:
             hh_title = f'HeadHunter {town}'
-            get_terminal_table(hh_statistics, hh_title)
+            print(get_terminal_table(hh_statistics, hh_title))
     except requests.exceptions.HTTPError as http_error:
         print(http_error)
 
