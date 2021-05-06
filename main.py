@@ -144,12 +144,12 @@ def get_terminal_table(statistics, title):
     ]
     table = [
         [
-            language_static,
-            statistics[language_static]['vacancies_found'],
-            statistics[language_static]['vacancies_processed'],
-            statistics[language_static]['average_salary']
+            programming_language,
+            statistic['vacancies_found'],
+            statistic['vacancies_processed'],
+            statistic['average_salary'],
         ]
-        for language_static in statistics
+        for programming_language, statistic in statistics.items()
     ]
     table.insert(0, table_first_line)
     table_instance = AsciiTable(table, title)
