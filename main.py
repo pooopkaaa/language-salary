@@ -67,8 +67,7 @@ def predict_salary(salary_from, salary_to):
 
 def predict_rub_salary_hh(vacancy):
     raw_salary = vacancy['salary']
-    if raw_salary:
-        if raw_salary.get('currency') == 'RUR':
+    if raw_salary and raw_salary.get('currency') == 'RUR':
             return predict_salary(raw_salary['from'], raw_salary['to'])
 
 
