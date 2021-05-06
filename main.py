@@ -58,17 +58,17 @@ def get_town_id_hh(town):
 
 def predict_salary(salary_from, salary_to):
     if salary_from and salary_to:
-        return (salary_to + salary_from)//2
+        return (salary_to + salary_from) // 2
     elif salary_from:
-        return salary_from*1.2
+        return salary_from * 1.2
     elif salary_to:
-        return salary_to*0.8
+        return salary_to * 0.8
 
 
 def predict_rub_salary_hh(vacancy):
     raw_salary = vacancy['salary']
     if raw_salary and raw_salary.get('currency') == 'RUR':
-            return predict_salary(raw_salary['from'], raw_salary['to'])
+        return predict_salary(raw_salary['from'], raw_salary['to'])
 
 
 def predict_rub_salary_sj(vacancy):
@@ -108,7 +108,7 @@ def fetch_statistics_hh(town_id, period):
                 processed_salaries.append(predicted_rub_salary)
         processed_vacancies_count = len(processed_salaries)
         if processed_vacancies_count:
-            average_salary = int(sum(processed_salaries)/processed_vacancies_count)
+            average_salary = int(sum(processed_salaries) // processed_vacancies_count)
             statistics[programming_language] = {
                 'vacancies_found': vacancies_found,
                 'vacancies_processed': processed_vacancies_count,
@@ -134,7 +134,7 @@ def fetch_statistics_sj(town_id, period):
                 processed_salaries.append(predicted_rub_salary)
         processed_vacancies_count = len(processed_salaries)
         if processed_vacancies_count:
-            average_salary = int(sum(processed_salaries)//processed_vacancies_count)
+            average_salary = int(sum(processed_salaries) // processed_vacancies_count)
             statistics[programming_language] = {
                 'vacancies_found': vacancies_found,
                 'vacancies_processed': processed_vacancies_count,
