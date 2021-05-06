@@ -7,15 +7,6 @@ import requests
 from terminaltables import AsciiTable
 
 
-load_dotenv()
-API_SUPERJOB_SECRETKEY = os.environ.get('API_SUPERJOB_SECRETKEY')
-PROGRAMMING_LANGUAGES = [
-    'Python', 'JavaScript', 'Java',
-    'Ruby', 'PHP', 'C++', 'C#',
-    'Swift', 'Go', 'Objective-C',
-]
-
-
 def get_command_line_args():
     parser = argparse.ArgumentParser(
         description='Скрипт для поиска размера зарплаты\
@@ -77,7 +68,7 @@ def predict_rub_salary_sj(vacancy):
 
 
 def generator_vacancies_for_hh(url, pages_amount, payload):
-    for page_number in range(pages_amount):
+    for _ in range(pages_amount):
         response = get_response(url, payload)
         yield from response['items']
 
@@ -91,12 +82,12 @@ def generator_vacancies_for_sj(url, header, payload):
             break
 
 
-def fetch_statistics_hh(town_id, period):
+def fetch_statistics_hh(town_id, period, programming_languages):
     statistics = {}
     url = 'https://api.hh.ru/vacancies'
     payload = {'area': town_id, 'period': period, 'per_page': 100}
 
-    for programming_language in PROGRAMMING_LANGUAGES[:1]:
+    for programming_language in programming_languages[:1]:
         payload['text'] = programming_language
         response = get_response(url, payload)
         vacancies_found = response['found']
@@ -117,13 +108,13 @@ def fetch_statistics_hh(town_id, period):
     return statistics
 
 
-def fetch_statistics_sj(town_id, period):
+def fetch_statistics_sj(town_id, period, programming_languages, api_superjob_secretkey):
     statistics = {}
     url = 'https://api.superjob.ru/2.0/vacancies/'
-    header = {'X-Api-App-Id': API_SUPERJOB_SECRETKEY}
+    header = {'X-Api-App-Id': api_superjob_secretkey}
     payload = {'town': town_id, 'period': period, 'count': 100}
 
-    for programming_language in PROGRAMMING_LANGUAGES[:1]:
+    for programming_language in programming_languages[:1]:
         payload['keyword'] = programming_language
         response = get_response(url, payload, header)
         vacancies_found = response['total']
@@ -165,6 +156,13 @@ def get_terminal_table(statistics, title):
 
 
 def main():
+    load_dotenv()
+    api_superjob_secretkey = os.environ.get('API_SUPERJOB_SECRETKEY')
+    programming_languages = [
+        'Python', 'JavaScript', 'Java',
+        'Ruby', 'PHP', 'C++', 'C#',
+        'Swift', 'Go', 'Objective-C',
+    ]
     command_line_args = get_command_line_args()
     town = command_line_args.town
     period = command_line_args.period
@@ -172,12 +170,17 @@ def main():
     try:
         sj_town_id, hh_town_id = get_town_id_sj(town), get_town_id_hh(town)
 
-        sj_statistics = fetch_statistics_sj(sj_town_id, period)
+        sj_statistics = fetch_statistics_sj(
+            sj_town_id,
+            period,
+            programming_languages,
+            api_superjob_secretkey
+        )
         if sj_statistics:
             sj_title = f'SuperJob {town}'
             print(get_terminal_table(sj_statistics, sj_title))
 
-        hh_statistics = fetch_statistics_hh(hh_town_id, period)
+        hh_statistics = fetch_statistics_hh(hh_town_id, period, programming_languages)
         if hh_statistics:
             hh_title = f'HeadHunter {town}'
             print(get_terminal_table(hh_statistics, hh_title))
