@@ -67,14 +67,14 @@ def predict_rub_salary_sj(vacancy):
         return predict_salary(vacancy['payment_from'], vacancy['payment_to'])
 
 
-def generator_vacancies_for_hh(url, pages_amount, payload):
+def get_vacancies_on_page_hh(url, pages_amount, payload):
     for page_number in range(pages_amount):
         payload['page'] = page_number
         response = get_response(url, payload)
         yield from response['items']
 
 
-def generator_vacancies_for_sj(url, header, payload):
+def get_vacancies_on_page_sj(url, header, payload):
     for page_number in count():
         payload['page'] = page_number
         response = get_response(url, payload, header)
@@ -94,7 +94,7 @@ def fetch_statistics_hh(town_id, period, programming_languages):
         vacancies_found = response['found']
         vacancies_pages_amount = response['pages']
         processed_salaries = []
-        for vacancy in generator_vacancies_for_hh(url, vacancies_pages_amount, payload):
+        for vacancy in get_vacancies_on_page_hh(url, vacancies_pages_amount, payload):
             predicted_rub_salary = predict_rub_salary_hh(vacancy)
             if predicted_rub_salary:
                 processed_salaries.append(predicted_rub_salary)
@@ -120,7 +120,7 @@ def fetch_statistics_sj(town_id, period, programming_languages, api_superjob_sec
         response = get_response(url, payload, header)
         vacancies_found = response['total']
         processed_salaries = []
-        for vacancy in generator_vacancies_for_sj(url, header, payload):
+        for vacancy in get_vacancies_on_page_sj(url, header, payload):
             predicted_rub_salary = predict_rub_salary_sj(vacancy)
             if predicted_rub_salary:
                 processed_salaries.append(predicted_rub_salary)
