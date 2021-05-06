@@ -68,7 +68,8 @@ def predict_rub_salary_sj(vacancy):
 
 
 def generator_vacancies_for_hh(url, pages_amount, payload):
-    for _ in range(pages_amount):
+    for page_number in range(pages_amount):
+        payload['page'] = page_number
         response = get_response(url, payload)
         yield from response['items']
 
