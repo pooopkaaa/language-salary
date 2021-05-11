@@ -67,29 +67,32 @@ def predict_rub_salary_sj(vacancy):
         return predict_salary(vacancy['payment_from'], vacancy['payment_to'])
 
 
-def get_vacancies_on_page_hh(url, pages_amount, payload):
-    for page_number in range(pages_amount):
+def get_vacancies_on_page_hh(url, payload):
+    for page_number in count():
         payload['page'] = page_number
         response = get_response(url, payload)
-        yield from response['items']
+        vacancies_found = response['found']
+        for vacancy in response['items']:
+            yield vacancy, vacancies_found
+        if page_number == response['pages'] - 1:
+            break
 
 
 def get_vacancies_on_page_sj(url, header, payload):
     for page_number in count():
         payload['page'] = page_number
         response = get_response(url, payload, header)
-        yield from response['objects']
+        vacancies_found = response['total']
+        for vacancy in response['objects']:
+            yield vacancy, vacancies_found
         if not response['more']:
             break
 
 
 def get_processed_salaries_hh(url, payload, programming_language):
     payload['text'] = programming_language
-    response = get_response(url, payload)
-    vacancies_found = response['found']
-    vacancies_pages_amount = response['pages']
     processed_salaries = []
-    for vacancy in get_vacancies_on_page_hh(url, vacancies_pages_amount, payload):
+    for vacancy, vacancies_found in get_vacancies_on_page_hh(url, payload):
         predicted_rub_salary = predict_rub_salary_hh(vacancy)
         if predicted_rub_salary:
             processed_salaries.append(predicted_rub_salary)
@@ -98,10 +101,8 @@ def get_processed_salaries_hh(url, payload, programming_language):
 
 def get_processed_salaries_sj(url, header, payload, programming_language):
     payload['keyword'] = programming_language
-    response = get_response(url, payload, header)
-    vacancies_found = response['total']
     processed_salaries = []
-    for vacancy in get_vacancies_on_page_sj(url, header, payload):
+    for vacancy, vacancies_found in get_vacancies_on_page_sj(url, header, payload):
         predicted_rub_salary = predict_rub_salary_sj(vacancy)
         if predicted_rub_salary:
             processed_salaries.append(predicted_rub_salary)
