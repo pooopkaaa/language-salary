@@ -114,7 +114,7 @@ def fetch_statistics_hh(town_id, period, programming_languages):
     url = 'https://api.hh.ru/vacancies'
     payload = {'area': town_id, 'period': period, 'per_page': 100}
 
-    for programming_language in programming_languages[:1]:
+    for programming_language in programming_languages:
         processed_salaries, vacancies_found = get_processed_salaries_hh(
             url,
             payload,
@@ -137,7 +137,7 @@ def fetch_statistics_sj(town_id, period, programming_languages, api_superjob_sec
     header = {'X-Api-App-Id': api_superjob_secretkey}
     payload = {'town': town_id, 'period': period, 'count': 100}
 
-    for programming_language in programming_languages[:1]:
+    for programming_language in programming_languages:
         processed_salaries, vacancies_found = get_processed_salaries_sj(
             url,
             header,
