@@ -44,4 +44,4 @@ python main.py
 
 ## Цели проекта
 
-Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org).
+Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org/referrals/RROtwNbx8g4rmv5TLjOL7ZYZbzFdx2oUdeoDEXTn/).
